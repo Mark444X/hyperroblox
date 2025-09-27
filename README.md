@@ -1,7 +1,6 @@
--- โหลด UI Library
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-local Window = Library.CreateLib("Hyper👽", "DarkTheme")
-local Tab = Window:NewTab("All")
+local Window = Library.CreateLib("ShadowWare🌑", "DarkTheme")
+local Tab = Window:NewTab("PlayerFuntion👤")
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -231,6 +230,105 @@ HitboxSection:NewTextBox("Hitbox Size", "ใส่ค่าขนาดของ
         applyHitbox()
     else warn("กรุณาใส่ตัวเลขมากกว่า 0") end
 end)
+
+local Tab = Window:NewTab("VisionESP🛰️")
+local Section = Tab:NewSection("Box ESP")
+
+-- Services
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+-- Settings
+local BoxColor = Color3.fromRGB(0, 255, 0)
+local BoxThickness = 1
+local BoxSize = Vector2.new(40, 60) -- ขนาดคงที่
+local NameTextSize = 14
+
+-- ESP Toggle
+local BoxEnabled = true
+local NameEnabled = true
+
+-- Table เก็บ ESP objects
+local ESPObjects = {}
+
+-- สร้าง ESP สำหรับผู้เล่น
+local function CreateESP(player)
+    if player == Players.LocalPlayer then return end
+
+    local box = Drawing.new("Square")
+    box.Visible = true
+    box.Color = BoxColor
+    box.Thickness = BoxThickness
+    box.Filled = false
+
+    local name = Drawing.new("Text")
+    name.Visible = true
+    name.Color = BoxColor
+    name.Size = NameTextSize
+    name.Center = true
+    name.Outline = true
+    name.Text = player.Name
+
+    ESPObjects[player] = {Box = box, Name = name}
+
+    -- อัปเดตชื่อถ้ามี respawn
+    player.CharacterAdded:Connect(function()
+        ESPObjects[player].Name.Text = player.Name
+    end)
+end
+
+-- Update ESP ทุก frame
+RunService.RenderStepped:Connect(function()
+    local camera = workspace.CurrentCamera
+    for player, objects in pairs(ESPObjects) do
+        local character = player.Character
+        if character and character:FindFirstChild("HumanoidRootPart") and character:FindFirstChild("Head") then
+            local root = character.HumanoidRootPart
+            local head = character.Head
+
+            local rootPos, onScreen = camera:WorldToViewportPoint(root.Position)
+            local headPos, headOnScreen = camera:WorldToViewportPoint(head.Position + Vector3.new(0, 1, 0))
+
+            -- Box
+            if BoxEnabled and onScreen then
+                objects.Box.Size = BoxSize
+                objects.Box.Position = Vector2.new(rootPos.X - BoxSize.X/2, rootPos.Y - BoxSize.Y/2)
+                objects.Box.Visible = true
+            else
+                objects.Box.Visible = false
+            end
+
+            -- Name
+            if NameEnabled and headOnScreen then
+                objects.Name.Position = Vector2.new(headPos.X, headPos.Y - 15)
+                objects.Name.Visible = true
+            else
+                objects.Name.Visible = false
+            end
+        else
+            objects.Box.Visible = false
+            objects.Name.Visible = false
+        end
+    end
+end)
+
+-- สร้าง ESP ให้ผู้เล่นที่มีอยู่แล้ว
+for _, player in pairs(Players:GetPlayers()) do
+    CreateESP(player)
+end
+
+-- สร้าง ESP ให้ผู้เล่นใหม่
+Players.PlayerAdded:Connect(CreateESP)
+
+
+Section:NewToggle("เปิด/ปิด Box", "Toggle Box รอบตัว", function(state)
+    BoxEnabled = state
+end)
+
+Section:NewToggle("เปิด/ปิด ชื่อ", "Toggle Name บนหัว", function(state)
+    NameEnabled = state
+end)
+
 
 -- Keybind
 local SettingSection = Tab:NewSection("Settings")
